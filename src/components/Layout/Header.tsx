@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, User, Heart, MessageSquare, Plus } from 'lucide-react';
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Menu, X, User, MessageSquare, Plus } from "lucide-react";
+import { useState } from "react";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const isAuthed = Boolean(
+    localStorage.getItem("token") && localStorage.getItem("refreshToken")
+  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +52,16 @@ const Header: React.FC = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium">
+            <Link
+              to="/"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
               Trang chủ
             </Link>
-            <Link to="/search" className="text-gray-700 hover:text-blue-600 font-medium">
+            <Link
+              to="/search"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
               Tìm kiếm
             </Link>
             <Link
@@ -62,7 +71,11 @@ const Header: React.FC = () => {
               <Plus className="w-4 h-4" />
               <span>Đăng tin</span>
             </Link>
-            <Link to="/account" className="text-gray-700 hover:text-blue-600">
+            <Link
+              to={isAuthed ? "/account" : "/login"}
+              className="text-gray-700 hover:text-blue-600"
+              title={isAuthed ? "Tài khoản" : "Đăng nhập"}
+            >
               <User className="w-6 h-6" />
             </Link>
             <Link to="/support" className="text-gray-700 hover:text-blue-600">
@@ -75,7 +88,11 @@ const Header: React.FC = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 rounded-lg hover:bg-gray-100"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -105,11 +122,11 @@ const Header: React.FC = () => {
                 Đăng tin
               </Link>
               <Link
-                to="/account"
+                to={isAuthed ? "/account" : "/login"}
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Tài khoản
+                {isAuthed ? "Tài khoản" : "Đăng nhập"}
               </Link>
               <Link
                 to="/support"

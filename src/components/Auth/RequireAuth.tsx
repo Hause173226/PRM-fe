@@ -7,9 +7,10 @@ type Props = {
 
 const RequireAuth: React.FC<Props> = ({ children }) => {
   const token = localStorage.getItem("token");
+  const refreshToken = localStorage.getItem("refreshToken");
   const location = useLocation();
 
-  if (!token) {
+  if (!token || !refreshToken) {
     // Nếu chưa đăng nhập, chuyển hướng về trang login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
