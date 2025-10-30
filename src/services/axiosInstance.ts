@@ -46,8 +46,8 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip token handling for signout requests
-    if (originalRequest.url?.includes("/users/signout")) {
+    // Skip token handling for logout requests
+    if (originalRequest.url?.includes("/auth/logout")) {
       return Promise.reject(error);
     }
 
@@ -96,7 +96,7 @@ axiosInstance.interceptors.response.use(
 
       // Call refresh token endpoint with correct format
       const response = await axios.post(
-        `${import.meta.env.VITE_REACT_APP_BASE_URL}/users/refresh-token`,
+        `${import.meta.env.VITE_REACT_APP_BASE_URL}/auth/refresh-token`,
         { refreshToken: refreshToken },
         { withCredentials: true }
       );

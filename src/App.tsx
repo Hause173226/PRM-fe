@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Layout/Header";
 import Footer from "./components/Layout/Footer";
 import ChatBot from "./components/Common/ChatBot";
@@ -16,43 +16,56 @@ import RequireAuth from "./components/Auth/RequireAuth";
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Header />
-
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/vehicle/:id" element={<VehicleDetailPage />} />
-            {/* Các route cần đăng nhập */}
-            <Route
-              path="/post-listing"
-              element={
-                <RequireAuth>
-                  <PostListingPage />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/account"
-              element={
-                <RequireAuth>
-                  <AccountPage />
-                </RequireAuth>
-              }
-            />
-            {/* Các route công khai */}
-            <Route path="/support" element={<SupportPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </main>
-
-        <Footer />
-        <ChatBot />
-      </div>
+      <AppLayout />
     </Router>
   );
 }
+
+const AppLayout = () => {
+  const location = useLocation();
+  const hideChrome = location.pathname === "/login";
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {!hideChrome && <Header />}
+
+      <main className={hideChrome ? "" : "flex-1"}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/vehicle/:id" element={<VehicleDetailPage />} />
+          {/* Các route cần đăng nhập */}
+          <Route
+            path="/post-listing"
+            element={
+              <RequireAuth>
+                <PostListingPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <AccountPage />
+              </RequireAuth>
+            }
+          />
+          {/* Các route công khai */}
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
+
+      {!hideChrome && (
+        <>
+          <Footer />
+          <ChatBot />
+        </>
+      )}
+    </div>
+  );
+};
 
 export default App;
