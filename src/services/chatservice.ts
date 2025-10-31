@@ -14,6 +14,7 @@ export interface ChatMessage {
   content: string;
   attachments?: Attachment[];
   createdAt?: string;
+  senderId?: string;
   // Thêm các trường khác nếu cần
 }
 
@@ -26,13 +27,13 @@ export interface Attachment {
 
 // Lấy danh sách tất cả các chat
 export const getChats = async () => {
-  const res = await axiosInstance.get<Chat[]>("/api/chats");
-  return res.data;
+  const res = await axiosInstance.get("/chats");
+  return res;
 };
 
 // Lấy thông tin một chat theo id
 export const getChatById = async (id: string) => {
-  const res = await axiosInstance.get<Chat>(`/api/chats/${id}`);
+  const res = await axiosInstance.get<Chat>(`/chats/${id}`);
   return res.data;
 };
 
@@ -41,13 +42,13 @@ export const createChat = async (data: {
   listingId: string;
   sellerId: string;
 }) => {
-  const res = await axiosInstance.post<Chat>("/api/chats", data);
-  return res.data;
+  const res = await axiosInstance.post("/chats", data);
+  return res.data.data; // Trả về object chat
 };
 
 // Đánh dấu đã đọc chat
 export const readChat = async (chatId: string) => {
-  const res = await axiosInstance.post(`/api/chats/${chatId}/read`);
+  const res = await axiosInstance.post(`/chats/${chatId}/read`);
   return res.data;
 };
 
@@ -57,13 +58,13 @@ export const getChatMessages = async (
   page: number = 1,
   pageSize: number = 50
 ) => {
-  const res = await axiosInstance.get<ChatMessage[]>(
-    `/api/chats/${chatId}/messages`,
-    {
-      params: { page, pageSize },
-    }
-  );
-  return res.data;
+  const res = await axiosInstance.get(`/chats/${chatId}/messages`, {
+    params: { page, pageSize },
+  });
+  // Nếu API trả về { data: [...] }
+  return Array.isArray(res.data.data) ? res.data.data : [];
+  // Nếu API trả về mảng trực tiếp
+  // return Array.isArray(res.data) ? res.data : [];
 };
 
 // Gửi tin nhắn vào một chat
@@ -72,7 +73,7 @@ export const sendChatMessage = async (
   data: { content: string; attachments?: Attachment[] }
 ) => {
   const res = await axiosInstance.post<ChatMessage>(
-    `/api/chats/${chatId}/messages`,
+    `/chats/${chatId}/messages`,
     data
   );
   return res.data;

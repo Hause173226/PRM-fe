@@ -18,6 +18,7 @@ export interface Product {
   description: string;
   createdAt?: string;
   updatedAt?: string;
+  ownerId: string;
 }
 
 export const getProducts = async (

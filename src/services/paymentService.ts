@@ -1,39 +1,32 @@
 import axiosInstance from "./axiosInstance";
 
-export interface CreatePaymentPayload {
-  userId: string;
+export interface CreateZaloPayPayload {
   amount: number;
-  orderInfo?: string;
-  returnUrl?: string;
+  description: string;
 }
 
-export interface CreatePaymentResult {
-  url?: string; // normalized field for redirect
-  paymentUrl?: any; // raw paymentUrl field if present
+export interface CreateZaloPayResult {
+  orderUrl?: string; // normalized field for redirect
   raw?: any; // full response for debugging
 }
 
 /**
- * Gọi API tạo URL VNPAY và trả về object chứa `url`.
- * Backend của bạn trả { paymentUrl: "https://..." } nên ta map về `url`.
+ * Gọi API tạo URL ZaloPay và trả về object chứa `orderUrl`.
+ * Backend trả về { orderurl: "https://..." }
  */
-export const createPaymentUrl = async (
-  payload: CreatePaymentPayload
-): Promise<CreatePaymentResult> => {
-  const res = await axiosInstance.post(
-    "/api/vnpay/create-payment-url",
-    payload
-  );
+export const createZaloPayUrl = async (
+  payload: CreateZaloPayPayload
+): Promise<CreateZaloPayResult> => {
+  const res = await axiosInstance.post("/api/zalopay/create-order", payload);
   const data = res.data ?? {};
 
-  // Các dạng field hay gặp
-  const url =
-    data?.paymentUrl ||
-    data?.paymentURL ||
-    data?.url ||
-    data?.data?.paymentUrl ||
-    data?.data?.url ||
+  // Lấy orderUrl từ response
+  const orderUrl =
+    data?.orderurl ||
+    data?.orderUrl ||
+    data?.data?.orderurl ||
+    data?.data?.orderUrl ||
     (typeof data === "string" ? data : undefined);
 
-  return { url, paymentUrl: data?.paymentUrl, raw: data };
+  return { orderUrl, raw: data };
 };

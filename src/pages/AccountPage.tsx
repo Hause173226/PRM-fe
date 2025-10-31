@@ -1,11 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { User, Heart, Clock, Edit, Star, Package } from "lucide-react";
+import {
+  User,
+  Heart,
+  Clock,
+  Edit,
+  Star,
+  Package,
+  MessageCircle,
+} from "lucide-react";
 import { mockUser, mockTransactions } from "../data/mockData";
 import { getProfile } from "../services/userService";
 import {
   getMyProducts,
   Product as ProductType,
 } from "../services/productService";
+import {
+  getBuyerOrders,
+  getSellerOrders,
+  Order,
+} from "../services/orderService";
+import { getChats, Chat } from "../services/chatservice";
+import { useNavigate } from "react-router-dom";
 
 type Profile = {
   id: string;
@@ -23,6 +38,20 @@ const AccountPage: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   // const [loading, setLoading] = useState(true);
   const [userListings, setUserListings] = useState<ProductType[]>([]);
+  const [buyerOrders, setBuyerOrders] = useState<Order[]>([]);
+  const [sellerOrders, setSellerOrders] = useState<Order[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
+
+  useEffect(() => {
+    getBuyerOrders()
+      .then(setBuyerOrders)
+      .catch(() => setBuyerOrders([]));
+
+    getSellerOrders()
+      .then(setSellerOrders)
+      .catch(() => setSellerOrders([]));
+  }, []);
 
   useEffect(() => {
     getProfile().then((data) => setProfile(data));
@@ -49,10 +78,33 @@ const AccountPage: React.FC = () => {
       style: "currency",
       currency: "VND",
     }).format(value);
-
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-
+  useEffect(() => {
+    if (activeTab === "chats") {
+      setLoadingChats(true);
+      const fetchChats = async () => {
+        try {
+          const data = await getChats();
+          // Ghi đè mảng chats, không cộng dồn
+          setChats(Array.isArray(data.data.data) ? data.data.data : []);
+        } catch (error) {
+          setChats([]);
+        } finally {
+          setLoadingChats(false);
+        }
+      };
+      fetchChats();
+    }
+    // Khi chuyển tab, clear chats nếu không phải tab "chats"
+    else {
+      setChats([]);
+    }
+  }, [activeTab]);
+  useEffect(() => {
+    console.log("chats: ", chats);
+  }, [chats]);
   // const userListings = mockVehicles.filter((v) => v.sellerId === mockUser.id);
   const userTransactions = mockTransactions.filter(
     (t) => t.buyerId === mockUser.id
@@ -132,7 +184,9 @@ const AccountPage: React.FC = () => {
     { id: "profile", name: "Hồ sơ", icon: User },
     { id: "listings", name: "Tin đăng", icon: Package },
     { id: "favorites", name: "Yêu thích", icon: Heart },
-    { id: "transactions", name: "Giao dịch", icon: Clock },
+    { id: "buyerOrders", name: "Lịch sử mua hàng", icon: Clock },
+    { id: "sellerOrders", name: "Lịch sử bán hàng", icon: Clock },
+    { id: "chats", name: "Tin nhắn", icon: MessageCircle }, // <-- thêm icon
   ];
 
   const renderTabContent = () => {
@@ -291,59 +345,139 @@ const AccountPage: React.FC = () => {
           </div>
         );
 
-      case "transactions":
+      case "buyerOrders":
         return (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Lịch sử giao dịch</h2>
-            </div>
-
-            {userTransactions.length === 0 ? (
+            <h2 className="text-xl font-semibold mb-6">Lịch sử mua hàng</h2>
+            {buyerOrders.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Chưa có giao dịch nào</p>
+                <p className="text-gray-600">Chưa có đơn mua nào</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {userTransactions.map((transaction) => (
-                  <div key={transaction.id} className="border rounded-lg p-4">
+                {buyerOrders.map((order) => (
+                  <div key={order.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">
-                        {transaction.vehicleTitle}
-                      </h3>
+                      <h3 className="font-semibold">{order.product?.name}</h3>
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          transaction.status === "completed"
+                          order.status === "Confirmed"
                             ? "bg-green-100 text-green-800"
-                            : transaction.status === "pending"
+                            : order.status === "Pending"
                             ? "bg-yellow-100 text-yellow-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {transaction.status === "completed"
-                          ? "Hoàn thành"
-                          : transaction.status === "pending"
-                          ? "Đang xử lý"
-                          : "Đã hủy"}
+                        {order.status}
                       </span>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>
                         <strong>Giá trị:</strong>{" "}
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(transaction.amount)}
+                        {formatCurrency(order.totalAmount)}
                       </p>
                       <p>
-                        <strong>Phương thức:</strong>{" "}
-                        {transaction.paymentMethod}
+                        <strong>Phương thức:</strong> {order.paymentMethod}
                       </p>
                       <p>
-                        <strong>Ngày giao dịch:</strong>{" "}
-                        {new Date(transaction.date).toLocaleDateString("vi-VN")}
+                        <strong>Ngày mua:</strong>{" "}
+                        {order.timeline?.[0]?.updatedAt
+                          ? new Date(
+                              order.timeline[0].updatedAt
+                            ).toLocaleDateString("vi-VN")
+                          : ""}
                       </p>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case "sellerOrders":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-6">Lịch sử bán hàng</h2>
+            {sellerOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Chưa có đơn bán nào</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {sellerOrders.map((order) => (
+                  <div key={order.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold">{order.product?.name}</h3>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          order.status === "Confirmed"
+                            ? "bg-green-100 text-green-800"
+                            : order.status === "Pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>
+                        <strong>Giá trị:</strong>{" "}
+                        {formatCurrency(order.totalAmount)}
+                      </p>
+                      <p>
+                        <strong>Phương thức:</strong> {order.paymentMethod}
+                      </p>
+                      <p>
+                        <strong>Ngày bán:</strong>{" "}
+                        {order.timeline?.[0]?.updatedAt
+                          ? new Date(
+                              order.timeline[0].updatedAt
+                            ).toLocaleDateString("vi-VN")
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      case "chats":
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-6">Tin nhắn</h2>
+            {loadingChats ? (
+              <div className="text-center py-8 text-gray-500">Đang tải...</div>
+            ) : chats.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Chưa có cuộc trò chuyện nào
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {chats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className="border rounded-lg p-4 flex justify-between items-center hover:bg-blue-50 transition cursor-pointer"
+                    onClick={() =>
+                      navigate(`/chat/${chat.listingId}/${chat.sellerId}`)
+                    }
+                  >
+                    <div>
+                      <div className="font-semibold">
+                        Sản phẩm: {chat.listingId}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Người bán: {chat.sellerId}
+                      </div>
+                      {/* Có thể bổ sung thêm thông tin người mua/người bán nếu API trả về */}
+                    </div>
+                    <button className="text-blue-600 font-medium">
+                      Trò chuyện
+                    </button>
                   </div>
                 ))}
               </div>
