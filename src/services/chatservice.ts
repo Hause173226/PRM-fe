@@ -5,7 +5,10 @@ export interface Chat {
   id: string;
   listingId?: string;
   sellerId?: string;
+  buyerId?: string;
   // Thêm các trường khác nếu cần
+  listingName?: string;
+  sellerName?: string;
 }
 
 export interface ChatMessage {

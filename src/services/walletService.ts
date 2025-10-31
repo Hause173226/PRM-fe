@@ -7,6 +7,6 @@ export interface WalletInfo {
 }
 
 export const getWalletByUser = async (userId: string): Promise<WalletInfo> => {
-  const res = await axiosInstance.get(`/api/wallets/users/${userId}`);
+  const res = await axiosInstance.get(`/wallets/users/${userId}`);
   return res.data;
 };

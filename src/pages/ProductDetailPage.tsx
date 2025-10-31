@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getProductById, Product } from "../services/productService";
+import { getProfile } from "../services/userService";
 import {
   Battery,
   MapPin,
@@ -21,7 +22,28 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const isOwner = product && currentUserId && product.ownerId === currentUserId;
+
+  // Lấy thông tin user hiện tại
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const profile = await getProfile();
+        const userId = profile?.id || profile?._id || null;
+        setCurrentUserId(userId);
+        console.log("Current user profile:", profile);
+        console.log("Current user ID:", userId);
+      } catch (err) {
+        console.log("User not logged in or error fetching profile");
+        setCurrentUserId(null);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -29,7 +51,11 @@ const ProductDetailPage: React.FC = () => {
         setError(null);
         if (id) {
           const data = await getProductById(id);
+          console.log("=== DEBUG ProductDetailPage ===");
           console.log("Fetched product:", data);
+          console.log("Product ownerId:", data?.ownerId);
+          console.log("Current userId:", currentUserId);
+          console.log("Is owner:", data && currentUserId && data.ownerId === currentUserId);
           setProduct(data);
         }
       } catch (err: any) {
@@ -39,7 +65,7 @@ const ProductDetailPage: React.FC = () => {
       }
     };
     fetchProduct();
-  }, [id]);
+  }, [id, currentUserId]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -294,25 +320,36 @@ const ProductDetailPage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="space-y-3">
-                  <button
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                    onClick={() => navigate(`/order/${product.id}`)}
-                  >
-                    <ShoppingCart className="w-5 h-5" />
-                    <span>Mua ngay</span>
-                  </button>
+                {!isOwner && (
+                  <div className="space-y-3">
+                    <button
+                      className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                      onClick={() => navigate(`/order/${product.id}`)}
+                    >
+                      <ShoppingCart className="w-5 h-5" />
+                      <span>Mua ngay</span>
+                    </button>
 
-                  <button
-                    className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
-                    onClick={() =>
-                      navigate(`/chat/${product.id}/${product.ownerId}`)
-                    }
-                  >
-                    <Phone className="w-5 h-5" />
-                    <span>Liên hệ người bán</span>
-                  </button>
-                </div>
+                    <button
+                      className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
+                      onClick={() =>
+                        navigate(`/chat/${product.id}/${product.ownerId}`)
+                      }
+                    >
+                      <Phone className="w-5 h-5" />
+                      <span>Liên hệ người bán</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Thông báo cho chủ sản phẩm */}
+                {isOwner && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-blue-800 text-center font-medium">
+                      Đây là sản phẩm của bạn
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Seller Info Card */}
@@ -365,9 +402,16 @@ const ProductDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                <button className="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Gửi tin nhắn
-                </button>
+                {!isOwner && (
+                  <button
+                    className="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                    onClick={() =>
+                      navigate(`/chat/${product.id}/${product.ownerId}`)
+                    }
+                  >
+                    Gửi tin nhắn
+                  </button>
+                )}
               </div>
 
               {/* Safety Tips */}
