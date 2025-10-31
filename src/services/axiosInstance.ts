@@ -3,7 +3,7 @@ import { handleTokenExpiration } from "../utils/authUtils";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_REACT_APP_BASE_URL,
-  withCredentials: true,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },

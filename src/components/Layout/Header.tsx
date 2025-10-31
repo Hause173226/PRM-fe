@@ -1,20 +1,53 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, X, User, MessageSquare, Plus } from "lucide-react";
-import { useState } from "react";
+import {
+  Search,
+  Menu,
+  X,
+  User,
+  MessageSquare,
+  Plus,
+  ChevronDown,
+  LogOut,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import authService from "../../services/authService";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const isAuthed = Boolean(
     localStorage.getItem("token") && localStorage.getItem("refreshToken")
   );
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch {}
+    setIsUserMenuOpen(false);
+    navigate("/");
   };
 
   return (
@@ -43,7 +76,7 @@ const Header: React.FC = () => {
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
               >
                 <Search className="w-5 h-5" />
               </button>
@@ -71,13 +104,45 @@ const Header: React.FC = () => {
               <Plus className="w-4 h-4" />
               <span>Đăng tin</span>
             </Link>
-            <Link
-              to={isAuthed ? "/account" : "/login"}
-              className="text-gray-700 hover:text-blue-600"
-              title={isAuthed ? "Tài khoản" : "Đăng nhập"}
-            >
-              <User className="w-6 h-6" />
-            </Link>
+            {!isAuthed ? (
+              <Link
+                to="/login"
+                className="text-gray-700 hover:text-blue-600"
+                title="Đăng nhập"
+              >
+                <User className="w-6 h-6" />
+              </Link>
+            ) : (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen((v) => !v)}
+                  className="flex items-center gap-1 text-gray-700 hover:text-blue-600"
+                  aria-haspopup="menu"
+                  aria-expanded={isUserMenuOpen}
+                >
+                  <User className="w-6 h-6" />
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {isUserMenuOpen && (
+                  <div className="absolute left-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 text-sm">
+                    <Link
+                      to="/account"
+                      className="px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      Tài khoản của tôi
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" /> Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <Link to="/support" className="text-gray-700 hover:text-blue-600">
               <MessageSquare className="w-6 h-6" />
             </Link>
@@ -121,13 +186,35 @@ const Header: React.FC = () => {
               >
                 Đăng tin
               </Link>
-              <Link
-                to={isAuthed ? "/account" : "/login"}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {isAuthed ? "Tài khoản" : "Đăng nhập"}
-              </Link>
+              {!isAuthed ? (
+                <Link
+                  to="/login"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng nhập
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/account"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Tài khoản của tôi
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Đăng xuất
+                  </button>
+                </>
+              )}
               <Link
                 to="/support"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
