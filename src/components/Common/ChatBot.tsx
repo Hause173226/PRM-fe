@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import { MessageCircle, Send, X, Bot } from 'lucide-react';
-import { ChatMessage } from '../../types';
+import React, { useState } from "react";
+import { MessageCircle, Send, X, Bot } from "lucide-react";
+import { ChatMessage } from "../../types";
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
-      message: 'Xin chào! Tôi là trợ lý ảo của MarketPlace. Tôi có thể giúp gì cho bạn?',
+      id: "1",
+      message:
+        "Xin chào! Tôi là trợ lý ảo của MarketPlace. Tôi có thể giúp gì cho bạn?",
       isUser: false,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -22,21 +23,22 @@ const ChatBot: React.FC = () => {
       id: Date.now().toString(),
       message: message.trim(),
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setMessage('');
+    setMessages((prev) => [...prev, userMessage]);
+    setMessage("");
 
     // Mock AI response
     setTimeout(() => {
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        message: 'Cảm ơn bạn đã liên hệ! Hiện tại tôi đang trong quá trình phát triển. Vui lòng liên hệ hotline 1900 6789 để được hỗ trợ trực tiếp.',
+        message:
+          "Cảm ơn bạn đã liên hệ! Hiện tại tôi đang trong quá trình phát triển. Vui lòng liên hệ hotline 1900 6789 để được hỗ trợ trực tiếp.",
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, aiResponse]);
     }, 1000);
   };
 
@@ -47,7 +49,11 @@ const ChatBot: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50 flex items-center justify-center"
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        {isOpen ? (
+          <X className="w-6 h-6" />
+        ) : (
+          <MessageCircle className="w-6 h-6" />
+        )}
       </button>
 
       {/* Chat Window */}
@@ -64,13 +70,15 @@ const ChatBot: React.FC = () => {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${
+                  msg.isUser ? "justify-end" : "justify-start"
+                }`}
               >
                 <div
                   className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
                     msg.isUser
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   {msg.message}

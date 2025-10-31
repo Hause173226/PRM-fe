@@ -1,52 +1,79 @@
-import React, { useState } from 'react';
-import { 
-  MessageCircle, Phone, Mail, Clock, ChevronDown, 
-  ChevronUp, Star, User, Search, Send 
-} from 'lucide-react';
-import { mockFAQ, mockReviews } from '../data/mockData';
+import React, { useState } from "react";
+import {
+  MessageCircle,
+  Phone,
+  Mail,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  Search,
+  Send,
+} from "lucide-react";
+import { mockFAQ, mockReviews } from "../data/mockData";
 
 const SupportPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('faq');
+  const [activeTab, setActiveTab] = useState("faq");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: ''
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
   });
   const [reviewForm, setReviewForm] = useState({
     rating: 0,
-    comment: ''
+    comment: "",
   });
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Tin nhắn của bạn đã được gửi thành công! Chúng tôi sẽ phản hồi trong vòng 24h.');
-    setContactForm({ name: '', email: '', phone: '', subject: '', message: '' });
+    alert(
+      "Tin nhắn của bạn đã được gửi thành công! Chúng tôi sẽ phản hồi trong vòng 24h."
+    );
+    setContactForm({
+      name: "",
+      email: "",
+      phone: "",
+      subject: "",
+      message: "",
+    });
   };
 
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Cảm ơn bạn đã đánh giá! Phản hồi của bạn rất quan trọng với chúng tôi.');
-    setReviewForm({ rating: 0, comment: '' });
+    alert(
+      "Cảm ơn bạn đã đánh giá! Phản hồi của bạn rất quan trọng với chúng tôi."
+    );
+    setReviewForm({ rating: 0, comment: "" });
   };
 
-  const renderStars = (rating: number, interactive = false, onRatingChange?: (rating: number) => void) => {
+  const renderStars = (
+    rating: number,
+    interactive = false,
+    onRatingChange?: (rating: number) => void
+  ) => {
     return (
       <div className="flex space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
-            type={interactive ? 'button' : undefined}
-            onClick={interactive && onRatingChange ? () => onRatingChange(star) : undefined}
-            className={interactive ? 'hover:scale-110 transition-transform' : ''}
+            type={interactive ? "button" : undefined}
+            onClick={
+              interactive && onRatingChange
+                ? () => onRatingChange(star)
+                : undefined
+            }
+            className={
+              interactive ? "hover:scale-110 transition-transform" : ""
+            }
           >
             <Star
               className={`w-5 h-5 ${
                 star <= rating
-                  ? 'text-yellow-500 fill-current'
-                  : 'text-gray-300'
+                  ? "text-yellow-500 fill-current"
+                  : "text-gray-300"
               }`}
             />
           </button>
@@ -56,36 +83,43 @@ const SupportPage: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'faq', name: 'Câu hỏi thường gặp', icon: Search },
-    { id: 'contact', name: 'Liên hệ hỗ trợ', icon: MessageCircle },
-    { id: 'reviews', name: 'Đánh giá dịch vụ', icon: Star },
+    { id: "faq", name: "Câu hỏi thường gặp", icon: Search },
+    { id: "contact", name: "Liên hệ hỗ trợ", icon: MessageCircle },
+    { id: "reviews", name: "Đánh giá dịch vụ", icon: Star },
   ];
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'faq':
+      case "faq":
         return (
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Câu hỏi thường gặp
               </h2>
-              
+
               <div className="space-y-4">
                 {mockFAQ.map((faq, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg">
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg"
+                  >
                     <button
-                      onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                      onClick={() =>
+                        setExpandedFaq(expandedFaq === index ? null : index)
+                      }
                       className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                     >
-                      <span className="font-medium text-gray-900">{faq.question}</span>
+                      <span className="font-medium text-gray-900">
+                        {faq.question}
+                      </span>
                       {expandedFaq === index ? (
                         <ChevronUp className="w-5 h-5 text-gray-500" />
                       ) : (
                         <ChevronDown className="w-5 h-5 text-gray-500" />
                       )}
                     </button>
-                    
+
                     {expandedFaq === index && (
                       <div className="px-4 pb-4 border-t border-gray-200 bg-gray-50">
                         <p className="text-gray-700 mt-3">{faq.answer}</p>
@@ -98,7 +132,7 @@ const SupportPage: React.FC = () => {
           </div>
         );
 
-      case 'contact':
+      case "contact":
         return (
           <div className="space-y-6">
             {/* Contact Methods */}
@@ -136,7 +170,7 @@ const SupportPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Gửi tin nhắn hỗ trợ
               </h2>
-              
+
               <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -146,12 +180,14 @@ const SupportPage: React.FC = () => {
                     <input
                       type="text"
                       value={contactForm.name}
-                      onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, name: e.target.value })
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email *
@@ -159,7 +195,12 @@ const SupportPage: React.FC = () => {
                     <input
                       type="email"
                       value={contactForm.email}
-                      onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                      onChange={(e) =>
+                        setContactForm({
+                          ...contactForm,
+                          email: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
@@ -174,18 +215,28 @@ const SupportPage: React.FC = () => {
                     <input
                       type="tel"
                       value={contactForm.phone}
-                      onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                      onChange={(e) =>
+                        setContactForm({
+                          ...contactForm,
+                          phone: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Chủ đề *
                     </label>
                     <select
                       value={contactForm.subject}
-                      onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                      onChange={(e) =>
+                        setContactForm({
+                          ...contactForm,
+                          subject: e.target.value,
+                        })
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     >
@@ -206,7 +257,12 @@ const SupportPage: React.FC = () => {
                   <textarea
                     rows={6}
                     value={contactForm.message}
-                    onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                    onChange={(e) =>
+                      setContactForm({
+                        ...contactForm,
+                        message: e.target.value,
+                      })
+                    }
                     placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -225,7 +281,7 @@ const SupportPage: React.FC = () => {
           </div>
         );
 
-      case 'reviews':
+      case "reviews":
         return (
           <div className="space-y-6">
             {/* Review Form */}
@@ -233,14 +289,14 @@ const SupportPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Đánh giá dịch vụ
               </h2>
-              
+
               <form onSubmit={handleReviewSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Đánh giá tổng thể *
                   </label>
-                  {renderStars(reviewForm.rating, true, (rating) => 
-                    setReviewForm({...reviewForm, rating})
+                  {renderStars(reviewForm.rating, true, (rating) =>
+                    setReviewForm({ ...reviewForm, rating })
                   )}
                 </div>
 
@@ -251,7 +307,9 @@ const SupportPage: React.FC = () => {
                   <textarea
                     rows={4}
                     value={reviewForm.comment}
-                    onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
+                    onChange={(e) =>
+                      setReviewForm({ ...reviewForm, comment: e.target.value })
+                    }
                     placeholder="Chia sẻ trải nghiệm của bạn với dịch vụ..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -269,11 +327,16 @@ const SupportPage: React.FC = () => {
 
             {/* Reviews List */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-semibold mb-6">Đánh giá từ khách hàng</h3>
-              
+              <h3 className="text-xl font-semibold mb-6">
+                Đánh giá từ khách hàng
+              </h3>
+
               <div className="space-y-6">
                 {mockReviews.map((review) => (
-                  <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                  <div
+                    key={review.id}
+                    className="border-b border-gray-200 pb-6 last:border-b-0"
+                  >
                     <div className="flex items-start space-x-4">
                       <img
                         src={review.userAvatar}
@@ -287,7 +350,7 @@ const SupportPage: React.FC = () => {
                         </div>
                         <p className="text-gray-700 mb-2">{review.comment}</p>
                         <p className="text-sm text-gray-500">
-                          {new Date(review.date).toLocaleDateString('vi-VN')}
+                          {new Date(review.date).toLocaleDateString("vi-VN")}
                         </p>
                       </div>
                     </div>
@@ -329,8 +392,8 @@ const SupportPage: React.FC = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-600 hover:bg-gray-50'
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-50"
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -343,9 +406,7 @@ const SupportPage: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
-            {renderTabContent()}
-          </div>
+          <div className="flex-1">{renderTabContent()}</div>
         </div>
       </div>
     </div>

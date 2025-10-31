@@ -7,7 +7,8 @@ import { IoIosArrowBack } from "react-icons/io";
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as any)?.from?.pathname || "/account";
+  const fromState = (location.state as any)?.from?.pathname as string | undefined;
+  const redirectTo = fromState && fromState !== "/login" && fromState !== "/register" ? fromState : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +34,7 @@ const LoginPage: React.FC = () => {
     setError(null);
     try {
       await authService.login({ email, password });
-      navigate(from, { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (err: any) {
       setError(
         err?.response?.data?.message || err?.message || "Đăng nhập thất bại"
@@ -203,7 +204,7 @@ const LoginPage: React.FC = () => {
             <div className="text-center text-sm pt-2">
               <span className="text-gray-600">Chưa có tài khoản? </span>
               <Link
-                to="#"
+                to="/register"
                 className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
               >
                 Đăng ký ngay
