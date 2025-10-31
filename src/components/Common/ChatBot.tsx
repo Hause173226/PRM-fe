@@ -1,50 +1,138 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X, Bot } from "lucide-react";
-import { ChatMessage } from "../../types";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+type Msg = { role: "user" | "assistant"; text: string };
+
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 const ChatBot: React.FC = () => {
+  const apiKey = import.meta.env?.VITE_GEMINI_KEY as string | undefined;
   const [isOpen, setIsOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Msg[]>([
     {
-      id: "1",
-      message:
-        "Xin chào! Tôi là trợ lý ảo của MarketPlace. Tôi có thể giúp gì cho bạn?",
-      isUser: false,
-      timestamp: new Date(),
+      role: "assistant",
+      text: "⚡ Xin chào! Tôi là trợ lý AI chuyên về **pin xe điện**. Hãy hỏi tôi bất cứ điều gì về tuổi thọ, hiệu suất, bảo dưỡng, hay công nghệ pin mới nhất nhé!",
     },
   ]);
+  const [loading, setLoading] = useState(false);
+  const boxRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim()) return;
+  // Tự động cuộn xuống khi có tin nhắn mới
+  useEffect(() => {
+    if (boxRef.current) {
+      boxRef.current.scrollTop = boxRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      message: message.trim(),
-      isUser: true,
-      timestamp: new Date(),
-    };
+  // Xóa toàn bộ hội thoại
+  const clearChat = () => {
+    setMessages([
+      {
+        role: "assistant",
+        text: "⚡ Xin chào! Tôi là trợ lý AI chuyên về **pin xe điện**. Hãy hỏi tôi bất cứ điều gì về tuổi thọ, hiệu suất, bảo dưỡng, hay công nghệ pin mới nhất nhé!",
+      },
+    ]);
+  };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setMessage("");
+  const send = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const text = input.trim();
+    if (!text || loading) return;
 
-    // Mock AI response
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        message:
-          "Cảm ơn bạn đã liên hệ! Hiện tại tôi đang trong quá trình phát triển. Vui lòng liên hệ hotline 1900 6789 để được hỗ trợ trực tiếp.",
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+    // Nếu chưa có API key
+    if (!apiKey) {
+      setMessages((m) => [
+        ...m,
+        { role: "user", text },
+        {
+          role: "assistant",
+          text: "❌ Không tìm thấy API key Gemini. Hãy thêm `VITE_GEMINI_KEY` vào file `.env` rồi khởi động lại dự án.",
+        },
+      ]);
+      setInput("");
+      return;
+    }
+
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+      // prompt hệ thống
+      const systemPrompt = `
+      Bạn là một chuyên gia về pin xe điện và xe điện.
+      Trả lời ngắn gọn, dễ hiểu, rõ ràng.
+      Dùng gạch đầu dòng hoặc xuống dòng để trình bày nếu cần.
+      Không dùng ký tự Markdown **đậm** hoặc _nghiêng_.
+      `;
+
+      const fullPrompt = `${systemPrompt}\n\nNgười dùng hỏi: ${text}`;
+
+      // Hiển thị khung trống của AI để stream dần
+      let acc = "";
+      setMessages((m) => [...m, { role: "assistant", text: "" }]);
+
+      const stream = await model.generateContentStream({
+        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+        generationConfig: {
+          maxOutputTokens: 256,
+          temperature: 0.4,
+          topK: 32,
+          topP: 0.9,
+          responseMimeType: "text/plain",
+        },
+      });
+
+      // Nhận dữ liệu từng phần
+      for await (const chunk of stream.stream) {
+        const piece = chunk?.text() ?? "";
+        if (piece) {
+          acc += piece;
+          setMessages((m) => {
+            const copy = [...m];
+            const last = copy[copy.length - 1];
+            if (last && last.role === "assistant") last.text = acc;
+            return copy;
+          });
+        }
+      }
+
+      // Nếu không có phản hồi
+      if (!acc.trim()) {
+        setMessages((m) => {
+          const copy = [...m];
+          const last = copy[copy.length - 1];
+          if (last && last.role === "assistant") {
+            last.text = "⚠️ Không có phản hồi (có thể bị bộ lọc an toàn chặn).";
+          }
+          return copy;
+        });
+      }
+    } catch (err: any) {
+      console.error("ChatBot error:", err);
+      const msg = err?.message || "Không xác định";
+      setMessages((m) => {
+        const copy = [...m];
+        const last = copy[copy.length - 1];
+        if (last && last.role === "assistant" && !last.text) {
+          last.text = `⚠️ Lỗi gọi Gemini: ${msg}`;
+          return copy;
+        }
+        return [...copy, { role: "assistant", text: `⚠️ Lỗi: ${msg}` }];
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
-      {/* Chat Button */}
+      {/* Nút bật/tắt chat */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50 flex items-center justify-center"
@@ -56,54 +144,66 @@ const ChatBot: React.FC = () => {
         )}
       </button>
 
-      {/* Chat Window */}
+      {/* Cửa sổ chat */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-80 h-96 bg-white rounded-lg shadow-xl border z-50 flex flex-col">
+        <div className="fixed bottom-24 right-6 w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-blue-600 text-white p-4 rounded-t-lg flex items-center space-x-2">
-            <Bot className="w-5 h-5" />
-            <h3 className="font-medium">Trợ lý ảo MarketPlace</h3>
+          <div className="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              <h3 className="font-medium text-sm">Trợ lý AI về pin xe điện</h3>
+            </div>
+            <button
+              onClick={clearChat}
+              className="text-xs bg-blue-700 hover:bg-blue-800 px-2 py-1 rounded"
+            >
+              Xóa
+            </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3">
-            {messages.map((msg) => (
+          {/* Nội dung tin nhắn */}
+          <div
+            ref={boxRef}
+            className="flex-1 p-3 overflow-y-auto bg-gray-50 space-y-3 scroll-smooth"
+          >
+            {messages.map((msg, idx) => (
               <div
-                key={msg.id}
+                key={idx}
                 className={`flex ${
-                  msg.isUser ? "justify-end" : "justify-start"
+                  msg.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                    msg.isUser
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-800"
+                  className={`max-w-[75%] px-3 py-2 rounded-lg text-sm leading-relaxed whitespace-pre-line ${
+                    msg.role === "user"
+                      ? "bg-blue-600 text-white rounded-br-none"
+                      : "bg-white border border-gray-200 shadow-sm text-gray-800 rounded-bl-none"
                   }`}
                 >
-                  {msg.message}
+                  {msg.text ||
+                    (loading && msg.role === "assistant" ? "Đang soạn..." : "")}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Input */}
-          <form onSubmit={handleSendMessage} className="p-4 border-t">
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Nhập tin nhắn..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-              <button
-                type="submit"
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
+          {/* Ô nhập */}
+          <form onSubmit={send} className="p-3 bg-white border-t flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Hỏi về pin xe điện..."
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              disabled={loading}
+            >
+              <Send className="w-4 h-4" />
+            </button>
           </form>
         </div>
       )}
