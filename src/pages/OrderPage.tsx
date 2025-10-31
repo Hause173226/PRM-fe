@@ -88,36 +88,8 @@ const OrderPage: React.FC = () => {
   };
 
   const handleTopUpAndPay = async () => {
-    if (!product || shortfall === null || shortfall <= 0) return;
-    try {
-      setTopUpLoading(true);
-      const userId = getCurrentUserId();
-      if (!userId) {
-        alert("Vui lòng đăng nhập để nạp tiền");
-        return;
-      }
-
-      const amount = Math.ceil(shortfall); // đảm bảo integer
-      const description = `Nạp tiền để thanh toán đơn hàng: ${product.name}`;
-
-      // Gọi ZaloPay API
-      const resp = await createZaloPayUrl({
-        amount,
-        description,
-      });
-
-      if (resp.orderUrl) {
-        window.location.href = resp.orderUrl;
-      } else {
-        console.error("No ZaloPay url in response", resp.raw);
-        alert("Không tạo được đường dẫn thanh toán. Vui lòng thử lại.");
-      }
-    } catch (err) {
-      console.error("Top-up error", err);
-      alert("Lỗi khi tạo liên kết nạp tiền. Vui lòng thử lại.");
-    } finally {
-      setTopUpLoading(false);
-    }
+    // Chuyển hướng đến trang ví để nạp tiền
+    navigate("/account", { state: { openTab: "wallet" } });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -579,10 +551,10 @@ const OrderPage: React.FC = () => {
       {showTopUpModal && shortfall !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
-            className="absolute inset-0 bg-black opacity-40"
+            className="absolute inset-0 bg-black bg-opacity-60"
             onClick={() => setShowTopUpModal(false)}
           />
-          <div className="bg-white rounded-lg shadow-xl z-60 max-w-md w-full p-6 mx-4">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 mx-4">
             <h3 className="text-lg font-semibold mb-3">Số dư ví không đủ</h3>
             <p className="text-sm text-gray-700 mb-4">
               Số dư ví hiện tại không đủ để thanh toán đơn hàng. Vui lòng nạp
@@ -610,7 +582,7 @@ const OrderPage: React.FC = () => {
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
-                {topUpLoading ? "Chuyển tới cổng thanh toán..." : "Nạp tiền"}
+                {topUpLoading ? "Đang chuyển hướng..." : "Nạp tiền"}
               </button>
             </div>
           </div>

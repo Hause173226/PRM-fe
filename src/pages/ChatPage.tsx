@@ -7,6 +7,8 @@ import {
   ChatMessage,
   getChats,
 } from "../services/chatservice";
+import { getProductById } from "../services/productService";
+import { getUserById } from "../services/userService";
 
 // Giả sử lấy userId từ context hoặc localStorage
 const currentUserId = "69018208e1519300ed63251e"; // Thay bằng logic lấy user thực tế
@@ -22,6 +24,50 @@ const ChatPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [productName, setProductName] = useState<string>("");
+  const [sellerName, setSellerName] = useState<string>("");
+  const [sellerInitials, setSellerInitials] = useState<string>("NB");
+
+  // Fetch thông tin sản phẩm và người bán
+  useEffect(() => {
+    const fetchProductAndSeller = async () => {
+      // Fetch thông tin sản phẩm
+      if (productId) {
+        try {
+          const product = await getProductById(productId);
+          setProductName(product.name || "Sản phẩm");
+        } catch (err) {
+          console.error("Error fetching product:", err);
+          setProductName("Sản phẩm");
+        }
+      }
+
+      // Fetch thông tin người bán
+      if (sellerId) {
+        try {
+          const seller = await getUserById(sellerId);
+          const name = seller.fullName || seller.displayName || "Người bán";
+          setSellerName(name);
+          
+          // Tạo initials từ tên
+          const nameParts = name.trim().split(" ");
+          if (nameParts.length >= 2) {
+            setSellerInitials(
+              (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+            );
+          } else {
+            setSellerInitials(name.substring(0, 2).toUpperCase());
+          }
+        } catch (err) {
+          console.error("Error fetching seller:", err);
+          setSellerName("Người bán");
+          setSellerInitials("NB");
+        }
+      }
+    };
+
+    fetchProductAndSeller();
+  }, [productId, sellerId]);
 
   // Tìm hoặc tạo chat khi vào trang
   useEffect(() => {
@@ -77,10 +123,10 @@ const ChatPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [chatId]);
 
-  // Tự động scroll xuống cuối khi có tin nhắn mới
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Tự động scroll xuống cuối khi có tin nhắn mới - BỎ COMMENT NẾU MUỐN TẮT AUTO SCROLL
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,22 +197,22 @@ const ChatPage: React.FC = () => {
         {/* Header */}
         <div className="bg-white rounded-t-2xl shadow-lg p-6 border-b">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <h2 className="text-2xl font-bold text-gray-800">
-                Chat với người bán
+                {sellerName || "Chat với người bán"}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Sản phẩm #{productId}
+                {productName || `Sản phẩm #${productId}`}
               </p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-              NB
+              {sellerInitials}
             </div>
           </div>
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 bg-white overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 bg-white overflow-y-auto p-6 space-y-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {loading && messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -216,7 +262,7 @@ const ChatPage: React.FC = () => {
                 >
                   {!isCurrentUser && showAvatar && (
                     <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      NB
+                      {sellerInitials}
                     </div>
                   )}
                   {!isCurrentUser && !showAvatar && <div className="w-8" />}

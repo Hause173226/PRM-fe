@@ -5,28 +5,49 @@ export interface CreateZaloPayPayload {
   description: string;
 }
 
-export interface CreateZaloPayResult {
-  orderUrl?: string; // normalized field for redirect
-  raw?: any; // full response for debugging
+/**
+ * Interface cho response từ ZaloPay API
+ */
+export interface ZaloPayResponse {
+  returncode: string; // "1" = success, "2" = failed, "3" = pending
+  returnmessage: string;
+  zptranstoken?: string;
+  orderurl?: string;
 }
 
 /**
- * Gọi API tạo URL ZaloPay và trả về object chứa `orderUrl`.
- * Backend trả về { orderurl: "https://..." }
+ * Interface cho kết quả đã được chuẩn hóa
+ */
+export interface CreateZaloPayResult {
+  returncode: string;
+  returnmessage: string;
+  zptranstoken?: string;
+  orderUrl?: string; // normalized field for redirect
+  raw?: ZaloPayResponse; // full response for debugging
+}
+
+/**
+ * Gọi API tạo URL ZaloPay và trả về object chứa thông tin thanh toán.
+ * Backend trả về:
+ * {
+ *   "returncode": "1",
+ *   "returnmessage": "",
+ *   "zptranstoken": "ACJA44rMk79NZcX54H-GalYg",
+ *   "orderurl": "https://qcgateway.zalopay.vn/openinapp?order=..."
+ * }
  */
 export const createZaloPayUrl = async (
   payload: CreateZaloPayPayload
 ): Promise<CreateZaloPayResult> => {
-  const res = await axiosInstance.post("/api/zalopay/create-order", payload);
-  const data = res.data ?? {};
+  const res = await axiosInstance.post<ZaloPayResponse>("/zalopay/create-order", payload);
+  const data = res.data;
 
-  // Lấy orderUrl từ response
-  const orderUrl =
-    data?.orderurl ||
-    data?.orderUrl ||
-    data?.data?.orderurl ||
-    data?.data?.orderUrl ||
-    (typeof data === "string" ? data : undefined);
-
-  return { orderUrl, raw: data };
+  // Chuẩn hóa response
+  return {
+    returncode: data.returncode || "0",
+    returnmessage: data.returnmessage || "",
+    zptranstoken: data.zptranstoken,
+    orderUrl: data.orderurl, // normalize key to camelCase
+    raw: data,
+  };
 };
