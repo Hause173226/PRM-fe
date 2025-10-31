@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { createOrder } from "../services/orderService";
 import { getProductById, Product } from "../services/productService";
-import { createPaymentUrl } from "../services/PaymentService";
-import { getWalletByUser, WalletInfo } from "../services/WalletService";
+import { createPaymentUrl } from "../services/paymentService";
+import { getWalletByUser, WalletInfo } from "../services/walletService";
 import {
   ShoppingCart,
   MapPin,
