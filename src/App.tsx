@@ -21,6 +21,7 @@ import RequireAuth from "./components/Auth/RequireAuth";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import OrderPage from "./pages/OrderPage";
 import PriceSuggestion from "./components/Common/PriceSuggestion";
+import ChatPage from "./pages/ChatPage";
 
 function App() {
   return (
@@ -52,6 +53,14 @@ const AppLayout = () => {
             element={
               <RequireAuth>
                 <PostListingPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/chat/:productId/:sellerId"
+            element={
+              <RequireAuth>
+                <ChatPage />
               </RequireAuth>
             }
           />

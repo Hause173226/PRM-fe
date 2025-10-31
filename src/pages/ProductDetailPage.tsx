@@ -29,6 +29,7 @@ const ProductDetailPage: React.FC = () => {
         setError(null);
         if (id) {
           const data = await getProductById(id);
+          console.log("Fetched product:", data);
           setProduct(data);
         }
       } catch (err: any) {
@@ -302,7 +303,12 @@ const ProductDetailPage: React.FC = () => {
                     <span>Mua ngay</span>
                   </button>
 
-                  <button className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2">
+                  <button
+                    className="w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
+                    onClick={() =>
+                      navigate(`/chat/${product.id}/${product.ownerId}`)
+                    }
+                  >
                     <Phone className="w-5 h-5" />
                     <span>Liên hệ người bán</span>
                   </button>

@@ -8,6 +8,13 @@ const PostListingPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const token = localStorage.getItem("token");
+  let userId = "";
+  if (token) {
+    // Giải mã phần payload của JWT
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    userId = payload.userId || payload.id || ""; // Tùy backend trả về
+  }
 
   const [formData, setFormData] = useState({
     name: "",
@@ -127,7 +134,8 @@ const PostListingPage: React.FC = () => {
         location: formData.location,
         description: formData.description,
         images: imageUrls,
-        status: "pending",
+        status: "Pending",
+        ownerId: userId || "",
       };
 
       await createProduct(productData);

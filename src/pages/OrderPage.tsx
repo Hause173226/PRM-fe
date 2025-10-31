@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { createOrder } from "../services/orderService";
 import { getProductById, Product } from "../services/productService";
-import { createPaymentUrl } from "../services/paymentService";
+import { createZaloPayUrl } from "../services/paymentService"; // Sửa lại import
 import { getWalletByUser, WalletInfo } from "../services/walletService";
 import {
   ShoppingCart,
@@ -98,20 +98,18 @@ const OrderPage: React.FC = () => {
       }
 
       const amount = Math.ceil(shortfall); // đảm bảo integer
-      const returnUrl = `${window.location.origin}/orders/after-payment?productId=${product.id}`;
+      const description = `Nạp tiền để thanh toán đơn hàng: ${product.name}`;
 
-      const resp = await createPaymentUrl({
-        userId,
+      // Gọi ZaloPay API
+      const resp = await createZaloPayUrl({
         amount,
-        orderInfo: `Nạp tiền để thanh toán đơn hàng: ${product.name}`,
-        returnUrl,
+        description,
       });
 
-      if (resp.url) {
-        // redirect to payment gateway
-        window.location.href = resp.url;
+      if (resp.orderUrl) {
+        window.location.href = resp.orderUrl;
       } else {
-        console.error("No payment url in response", resp.raw);
+        console.error("No ZaloPay url in response", resp.raw);
         alert("Không tạo được đường dẫn thanh toán. Vui lòng thử lại.");
       }
     } catch (err) {
