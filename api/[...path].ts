@@ -1,14 +1,15 @@
 const baseUrl = "http://160.25.232.148:5000/api";
 
 export default async function handler(req: any, res: any) {
-  const targetUrl = baseUrl + req.url;
+  // Lấy path động từ URL (VD: auth/register)
+  const path = req.query.path ? req.query.path.join("/") : "";
+  const targetUrl = `${baseUrl}/${path}`;
 
   try {
     const response = await fetch(targetUrl, {
       method: req.method,
       headers: {
-        "Content-Type": "application/json",
-        ...req.headers,
+        "Content-Type": req.headers["content-type"] || "application/json",
       },
       body:
         req.method !== "GET" && req.method !== "HEAD"
