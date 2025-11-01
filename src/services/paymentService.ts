@@ -3,26 +3,29 @@ import axiosInstance from "./axiosInstance";
 export interface CreateZaloPayPayload {
   amount: number;
   description: string;
+  userId: string;
 }
 
 /**
- * Interface cho response từ ZaloPay API
+ * Interface cho response từ Backend API
  */
 export interface ZaloPayResponse {
-  returncode: string; // "1" = success, "2" = failed, "3" = pending
-  returnmessage: string;
-  zptranstoken?: string;
-  orderurl?: string;
+  success: boolean;
+  data?: {
+    appTransId: string;
+    orderUrl: string;
+  };
+  message?: string;
 }
 
 /**
  * Interface cho kết quả đã được chuẩn hóa
  */
 export interface CreateZaloPayResult {
-  returncode: string;
-  returnmessage: string;
-  zptranstoken?: string;
-  orderUrl?: string; // normalized field for redirect
+  success: boolean;
+  orderUrl?: string;
+  appTransId?: string;
+  message?: string;
   raw?: ZaloPayResponse; // full response for debugging
 }
 
@@ -30,10 +33,11 @@ export interface CreateZaloPayResult {
  * Gọi API tạo URL ZaloPay và trả về object chứa thông tin thanh toán.
  * Backend trả về:
  * {
- *   "returncode": "1",
- *   "returnmessage": "",
- *   "zptranstoken": "ACJA44rMk79NZcX54H-GalYg",
- *   "orderurl": "https://qcgateway.zalopay.vn/openinapp?order=..."
+ *   "success": true,
+ *   "data": {
+ *     "appTransId": "251101_021158852_1837",
+ *     "orderUrl": "https://qcgateway.zalopay.vn/openinapp?order=..."
+ *   }
  * }
  */
 export const createZaloPayUrl = async (
@@ -44,10 +48,10 @@ export const createZaloPayUrl = async (
 
   // Chuẩn hóa response
   return {
-    returncode: data.returncode || "0",
-    returnmessage: data.returnmessage || "",
-    zptranstoken: data.zptranstoken,
-    orderUrl: data.orderurl, // normalize key to camelCase
+    success: data.success || false,
+    orderUrl: data.data?.orderUrl,
+    appTransId: data.data?.appTransId,
+    message: data.message,
     raw: data,
   };
 };

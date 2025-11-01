@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { createOrder } from "../services/orderService";
 import { getProductById, Product } from "../services/productService";
-import { createZaloPayUrl } from "../services/paymentService"; // Sửa lại import
 import { getWalletByUser, WalletInfo } from "../services/walletService";
 import {
   ShoppingCart,

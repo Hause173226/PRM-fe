@@ -26,6 +26,7 @@ import { createZaloPayUrl } from "../services/paymentService";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getProductById } from "../services/productService";
 import { getUserById } from "../services/userService";
+import { QUICK_TOP_UP_AMOUNTS, MIN_TOP_UP_AMOUNT } from "../config/payment.config";
 
 type Profile = {
   id: string;
@@ -329,8 +330,13 @@ const AccountPage: React.FC = () => {
       return;
     }
 
-    if (amount < 10000) {
-      alert("Số tiền nạp tối thiểu là 10,000 VND");
+    if (amount < MIN_TOP_UP_AMOUNT) {
+      alert(`Số tiền nạp tối thiểu là ${formatCurrency(MIN_TOP_UP_AMOUNT)}`);
+      return;
+    }
+
+    if (!profile?.id) {
+      alert("Không tìm thấy thông tin người dùng");
       return;
     }
 
@@ -338,21 +344,37 @@ const AccountPage: React.FC = () => {
       setTopUpLoading(true);
       const description = `Nạp ${formatCurrency(amount)} vào ví`;
 
-      // Gọi API ZaloPay
-      const resp = await createZaloPayUrl({
+      const payload = {
         amount: Math.ceil(amount),
         description,
-      });
+        userId: profile.id,
+      };
 
-      // Kiểm tra returncode từ ZaloPay
-      if (resp.returncode === "1" && resp.orderUrl) {
+      console.log("Sending ZaloPay request with payload:", payload);
+
+      // Gọi API ZaloPay
+      const resp = await createZaloPayUrl(payload);
+      
+      console.log("ZaloPay response:", resp);
+
+      // Kiểm tra kết quả từ Backend
+      if (resp.success && resp.orderUrl) {
         // Success - chuyển hướng đến trang thanh toán ZaloPay
+        console.log("Redirecting to ZaloPay:", resp.orderUrl);
         window.location.href = resp.orderUrl;
       } else {
         // Failed hoặc không có orderUrl
-        const errorMsg = resp.returnmessage || "Không tạo được đường dẫn thanh toán";
+        let errorMsg = resp.message || "Không tạo được đường dẫn thanh toán";
+        
+        // Cung cấp thông báo lỗi chi tiết hơn
+        if (!resp.success) {
+          errorMsg = resp.message || "Không thể kết nối với cổng thanh toán ZaloPay. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.";
+        } else if (!resp.orderUrl) {
+          errorMsg = "Không nhận được đường dẫn thanh toán từ ZaloPay.";
+        }
+        
         console.error("ZaloPay error:", resp);
-        alert(`Lỗi: ${errorMsg}. Vui lòng thử lại.`);
+        alert(`Lỗi thanh toán:\n${errorMsg}`);
       }
     } catch (err) {
       console.error("Top-up error", err);
@@ -1252,17 +1274,19 @@ const AccountPage: React.FC = () => {
                 onChange={(e) => setTopUpAmount(e.target.value)}
                 placeholder="Nhập số tiền muốn nạp"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="10000"
+                min={MIN_TOP_UP_AMOUNT}
                 step="10000"
               />
-              <p className="text-xs text-gray-500 mt-1">Số tiền nạp tối thiểu: 10,000 VND</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Số tiền nạp tối thiểu: {formatCurrency(MIN_TOP_UP_AMOUNT)}
+              </p>
             </div>
 
             {/* Các mức nạp nhanh */}
             <div className="mb-6">
               <p className="text-sm font-medium text-gray-700 mb-2">Chọn nhanh:</p>
               <div className="grid grid-cols-3 gap-2">
-                {[50000, 100000, 200000, 500000, 1000000, 2000000].map((amount) => (
+                {QUICK_TOP_UP_AMOUNTS.map((amount) => (
                   <button
                     key={amount}
                     onClick={() => setTopUpAmount(amount.toString())}
